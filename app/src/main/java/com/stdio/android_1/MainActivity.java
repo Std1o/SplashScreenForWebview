@@ -40,16 +40,38 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        setTheme(R.style.Theme_ANDROID1);
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        progressBar = findViewById(R.id.progressBar);
-        if (isNetworkConnected()) {
-            initView();
-        } else {
-            mWebView = findViewById(R.id.maim_web);
-            mWebView.setVisibility(View.GONE);
-            progressBar.setVisibility(View.GONE);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                startApp();
+
+            }
+        });
+        thread.start();
+
+    }
+
+    public void startApp() {
+        try {
+            Thread.sleep(300);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    setTheme(R.style.Theme_ANDROID1);
+                    setContentView(R.layout.activity_main);
+                    progressBar = findViewById(R.id.progressBar);
+                    if (isNetworkConnected()) {
+                        initView();
+                    } else {
+                        mWebView = findViewById(R.id.maim_web);
+                        mWebView.setVisibility(View.GONE);
+                        progressBar.setVisibility(View.GONE);
+                    }
+                }
+            });
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
