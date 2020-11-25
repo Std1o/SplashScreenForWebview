@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     public static WebView mWebView;
     public static ProgressBar progressBar;
     private String URL_STRING = "https://android-1.ru";
+    CustomWebChromeClient customWebChromeClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 startApp();
-
             }
         });
         thread.start();
@@ -90,7 +90,8 @@ public class MainActivity extends AppCompatActivity {
         CookieManager.getInstance().setAcceptCookie(true);
         mWebView = findViewById(R.id.maim_web);
         mWebView.setWebViewClient(new MyWebViewClient(MainActivity.this));
-        mWebView.setWebChromeClient(new CustomWebChromeClient(MainActivity.this));
+        customWebChromeClient = new CustomWebChromeClient(MainActivity.this);
+        mWebView.setWebChromeClient(customWebChromeClient);
 
         mWebView.getSettings().setJavaScriptEnabled(true);
         mWebView.getSettings().setLoadWithOverviewMode(true);//loads the WebView completely zoomed out
@@ -110,33 +111,42 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDownloadStart(String url, String userAgent, String
                     contentDisposition, String mimetype, long contentLength) {
-                DownloadManager.Request request = new
-                        DownloadManager.Request(Uri.parse(url));
-                request.setMimeType(mimetype);
-                String cookies = CookieManager.getInstance().getCookie(url);
-                request.addRequestHeader("cookie", cookies);
-                request.addRequestHeader("User-Agent", userAgent);
-
-                request.setDescription("Description");
-                request.setTitle(URLUtil.guessFileName(url, contentDisposition,
-                        mimetype));
-                request.allowScanningByMediaScanner();
-
-                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-
-                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                        URLUtil.guessFileName(url, contentDisposition, mimetype));
-                DownloadManager dm = (DownloadManager)
-                        getSystemService(DOWNLOAD_SERVICE);
-                try {
-                    dm.enqueue(request);
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this,
-                            e.getMessage(),Toast.LENGTH_SHORT).show();
-                }
+               if (customWebChromeClient.file_permission()) {
+                   download(url, userAgent, contentDisposition, mimetype, contentLength);
+               } else {
+                   mWebView.reload();
+               }
             }
         });
         mWebView.loadUrl(URL_STRING);
+    }
+
+    private void download(String url, String userAgent, String
+            contentDisposition, String mimetype, long contentLength) {
+        DownloadManager.Request request = new
+                DownloadManager.Request(Uri.parse(url));
+        request.setMimeType(mimetype);
+        String cookies = CookieManager.getInstance().getCookie(url);
+        request.addRequestHeader("cookie", cookies);
+        request.addRequestHeader("User-Agent", userAgent);
+
+        request.setDescription("Description");
+        request.setTitle(URLUtil.guessFileName(url, contentDisposition,
+                mimetype));
+        request.allowScanningByMediaScanner();
+
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+
+        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
+                URLUtil.guessFileName(url, contentDisposition, mimetype));
+        DownloadManager dm = (DownloadManager)
+                getSystemService(DOWNLOAD_SERVICE);
+        try {
+            dm.enqueue(request);
+        } catch (Exception e) {
+            Toast.makeText(MainActivity.this,
+                    e.getMessage(),Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
